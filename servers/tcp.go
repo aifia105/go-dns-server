@@ -7,6 +7,8 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"aifia.com/dns-server/resolver"
 )
 
 func TcpServer(ctx context.Context, wg *sync.WaitGroup) error {
@@ -94,12 +96,20 @@ func handleConnection(conn net.Conn) {
 
 	fmt.Printf("Received complete DNS message of %d bytes from %s\n", length, conn.RemoteAddr())
 
+	dnsmessage, err := resolver.Parser(buffer)
+	if err != nil {
+		fmt.Printf("Error parsing DNS message from %s: %v\n", conn.RemoteAddr(), err)
+		return
+	}
+
+	fmt.Printf("Parsed DNS message from %s: %+v\n", conn.RemoteAddr(), dnsmessage)
+
 	res := []byte("Hello Bitch")
 	resLen := uint16(len(res))
 
 	resLenBytes := []byte{byte(resLen >> 8), byte(resLen & 0xff)}
 
-	_, err := conn.Write(resLenBytes)
+	_, err = conn.Write(resLenBytes)
 	if err != nil {
 		fmt.Println("Error writing to connection:", err)
 		return

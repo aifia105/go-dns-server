@@ -6,6 +6,8 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"aifia.com/dns-server/resolver"
 )
 
 func UdpServer(ctx context.Context, wg *sync.WaitGroup) error {
@@ -55,9 +57,12 @@ func UdpServer(ctx context.Context, wg *sync.WaitGroup) error {
 		addr := client.String()
 		fmt.Printf("Received %d bytes from %s\n", n, addr)
 
-		// will pass later to resolver
-		//message := buffer[:n]
-		fmt.Printf("Received from %s\n", addr)
+		dnsmessage, err := resolver.Parser(buffer[:n])
+		if err != nil {
+			fmt.Printf("Error parsing DNS message from %s: %v\n", addr, err)
+			continue
+		}
+		fmt.Printf("Parsed DNS message from %s: %+v\n", addr, dnsmessage)
 
 		res := []byte("Hello Bitch")
 
